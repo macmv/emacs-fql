@@ -1,7 +1,7 @@
 
 ; Syntax highlighting for .fql files.
-(load! "fql-mode.el")
+(require 'fql-mode)
 ; Language server support for .fql files. Depends on fql-mode.
-(load! "lsp-fql.el")
+(require 'lsp-fql)
 
 (provide 'fql)
