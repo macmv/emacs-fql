@@ -39,6 +39,13 @@
 ; This maps fql-mode to the language "fql", which is used below in :activation-fn
 (add-to-list 'lsp-language-id-configuration '(fql-mode . "fql"))
 
+; Sets up fql-analyzer to talk to localhost.
+(defun lsp-fql-set-secret ()
+  (lsp-request
+    "fauna/setConfig"
+    `(:endpoint ,"http://127.0.0.1:8443"
+      :secret ,"secret")))
+
 ; Actually sets up the fql-analyzer server.
 (lsp-register-client
  (make-lsp-client
@@ -51,9 +58,8 @@
    ;                          (inlineDecorationProvider . t)
    ;                          (didFocusProvider . t))
 
-   ; TODO
-   ;:initialized-fn (lambda (workspace)
-   ;                  (lsp-fql-set-secret))
+   :initialized-fn (lambda (workspace)
+                     (lsp-fql-set-secret))
 
    ; this actually goes and downlaods the :download dependency above
    :download-server-fn (lambda (_client callback error-callback _update?)
