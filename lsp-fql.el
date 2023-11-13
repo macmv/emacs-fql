@@ -1,5 +1,3 @@
-; === Below is the fql-analyzer setup.
-
 (require 'lsp-mode)
 (require 'dap-mode)
 (require 'lsp-lens)
@@ -22,35 +20,44 @@
   :type 'file)
 
 (lsp-dependency
+  'node
+  `(:system "node"))
+
+(lsp-dependency
   'fql-analyzer
-  `(:system, "node")
-  `(:system, lsp-fql-analyzer-store-path))
+  `(:download :url "https://static-assets.fauna.com/fql-analyzer/index.js"
+              :store-path lsp-fql-analyzer-store-path
+              :set-executable? t))
+
+; foo '(:system "node")
+
 
 ; Start fql-analyzer with `node fql-analyzer.js --stdio`
 (defun lsp-fql-analyzer-command ()
-  `(,"node", (lsp-package-path 'fql-analyzer), "--stdio"))
+  `(,(lsp-package-path 'node), lsp-fql-analyzer-store-path, "--stdio"))
 
-; Downloads fql-analyzer from our static assets URL.
-(defun lsp-fql-analyzer-download (_client callback error-callback _update?)
-  (call-process
-   "wget"
-   "https://static-assets.fauna.com/fql-analyzer/index.js"
-   "-o"
-   "/home/macmv/zzz.js")
-  (funcall callback))
+; This maps fql-mode to the language "fql", which is used below in :activation-fn
+(add-to-list 'lsp-language-id-configuration '(fql-mode . "fql"))
 
 ; Actually sets up the fql-analyzer server.
 (lsp-register-client
- (make-lsp-client :new-connection (lsp-stdio-connection 'lsp-fql-analyzer-command)
-                  :major-modes '(fql-mode)
-                  :priority -1
-                  ;fql-analyzer only supports completions as of writing, so we don't need any of these.
-                  ;:initialization-options '((decorationProvider . t)
-                  ;                          (inlineDecorationProvider . t)
-                  ;                          (didFocusProvider . t)
-                  :initialized-fn (lambda (workspace)
-                                    (lsp-fql-set-secret))
-                  :server-id 'fql-analyzer
-                  :download-server-fn #'lsp-fql-analyzer-download))
+ (make-lsp-client
+   :new-connection (lsp-stdio-connection 'lsp-fql-analyzer-command)
+   :activation-fn (lsp-activate-on "fql")
+   :priority -1
+   :server-id 'fql-analyzer
+   ; fql-analyzer only supports completions as of writing, so we don't need any of these.
+   ;:initialization-options '((decorationProvider . t)
+   ;                          (inlineDecorationProvider . t)
+   ;                          (didFocusProvider . t))
+
+   ; TODO
+   ;:initialized-fn (lambda (workspace)
+   ;                  (lsp-fql-set-secret))
+
+   ; this actually goes and downlaods the :download dependency above
+   :download-server-fn (lambda (_client callback error-callback _update?)
+                         (lsp-package-ensure 'node callback error-callback)
+                         (lsp-package-ensure 'fql-analyzer callback error-callback))))
 
 (provide 'lsp-fql)
