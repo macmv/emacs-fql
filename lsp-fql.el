@@ -63,7 +63,6 @@
 
    ; this actually goes and downlaods the :download dependency above
    :download-server-fn (lambda (_client callback error-callback _update?)
-                         (lsp-package-ensure 'node callback error-callback)
                          (lsp-package-ensure 'fql-analyzer callback error-callback))))
 
 (provide 'lsp-fql)
